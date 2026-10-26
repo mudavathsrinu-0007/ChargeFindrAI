@@ -1,0 +1,42 @@
+# ============================================================================
+# ChargeFindr AI — Git Ignore Policy
+# ============================================================================
+
+# Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment Variables & Local Secret Files
+.env
+.env.local
+.env.*.local
+*.env
+
+# Defense in Depth: Legacy Credential File & Subdirectory
+backend/database/db_config/py.java
+backend/database/db_config/
+
+# Python Bytecode & Caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs & Runtime Output
+*.log
+
+# IDE & Editor Configurations
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Operating System Metadata
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -1,0 +1,8 @@
+-- ChargeFindr AI Freeze Backup Created 2026-10-25
+-- Table: charging_stations
+
+INSERT INTO charging_stations (station_id, station_name, location, distance_km, charger_type, capacity_kw, available_ports, total_ports, estimated_wait_minutes, demand_level, latitude, longitude) VALUES (1, 'GreenCharge Hub', 'Madhapur, Hyderabad', 1.20, 'Fast DC', 60.00, 3, 4, 5, 'Low', 17.448300, 78.391500);
+INSERT INTO charging_stations (station_id, station_name, location, distance_km, charger_type, capacity_kw, available_ports, total_ports, estimated_wait_minutes, demand_level, latitude, longitude) VALUES (2, 'EV Power Point', 'Hitech City, Hyderabad', 2.50, 'Fast DC', 120.00, 1, 4, 15, 'High', 17.443500, 78.377200);
+INSERT INTO charging_stations (station_id, station_name, location, distance_km, charger_type, capacity_kw, available_ports, total_ports, estimated_wait_minutes, demand_level, latitude, longitude) VALUES (3, 'EcoCharge Station', 'Kondapur, Hyderabad', 3.10, 'AC Type 2', 22.00, 2, 3, 8, 'Medium', 17.469900, 78.357800);
+INSERT INTO charging_stations (station_id, station_name, location, distance_km, charger_type, capacity_kw, available_ports, total_ports, estimated_wait_minutes, demand_level, latitude, longitude) VALUES (4, 'VoltWay Charging', 'Gachibowli, Hyderabad', 4.20, 'Fast DC', 90.00, 0, 4, 25, 'High', 17.440100, 78.348900);
+INSERT INTO charging_stations (station_id, station_name, location, distance_km, charger_type, capacity_kw, available_ports, total_ports, estimated_wait_minutes, demand_level, latitude, longitude) VALUES (5, 'SmartPlug EV Hub', 'Kukatpally, Hyderabad', 5.00, 'AC Type 2', 22.00, 2, 4, 10, 'Medium', 17.494800, 78.399600);

@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChargeFindr AI — Intelligent EV Station Recommendation & Demand Prediction</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Top Navigation & Header -->
+  <header class="navbar">
+    <div class="nav-container">
+      <div class="brand">
+        <span class="brand-icon">⚡</span>
+        <div>
+          <h1>ChargeFindr AI</h1>
+          <p class="tagline">Intelligent EV Station Recommendation & Demand Prediction System</p>
+        </div>
+      </div>
+      <div class="nav-actions">
+        <div class="system-status">
+          <span id="status-indicator" class="status-dot"></span>
+          <span id="status-text">Connecting to backend...</span>
+        </div>
+        <div id="auth-nav-container" class="auth-nav-container">
+          <button type="button" id="btn-open-login" class="btn btn-sm btn-secondary">🔑 Sign In</button>
+          <button type="button" id="btn-open-register" class="btn btn-sm btn-primary">📝 Register</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="dashboard-container">
+    <!-- Smart Alert Banner (Module 6) -->
+    <div id="alert-banner" class="alert-banner" style="display: none;">
+      <span class="alert-icon">💡</span>
+      <span id="alert-message">Notice: VoltWay Charging (Gachibowli) is currently congested (0 ports). EcoCharge & GreenCharge Hub are recommended for quick turnaround.</span>
+    </div>
+
+    <!-- Top Controls: Modules 1 & 3 (Recommendation) -->
+    <section class="section-card search-section">
+      <div class="section-header">
+        <h2>🔍 Station Recommendation & Search</h2>
+        <span class="badge badge-primary">Module 1 & 3: Multi-Criteria AI Ranking</span>
+      </div>
+
+      <form id="recommend-form" class="filter-form">
+        <div class="form-group">
+          <label for="location-select">Target Area / Location</label>
+          <select id="location-select">
+            <option value="Any">All Hyderabad Areas</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="charger-type-select">Charger Type</label>
+          <select id="charger-type-select">
+            <option value="Any">Any Charger Type</option>
+            <option value="Fast DC">Fast DC (60kW - 120kW)</option>
+            <option value="AC Type 2">AC Type 2 (Standard 22kW)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="priority-select">Optimization Priority</label>
+          <select id="priority-select">
+            <option value="balanced">Balanced (Availability + Distance + Wait)</option>
+            <option value="fastest_charger">Fastest Charging Power</option>
+            <option value="shortest_wait">Shortest Waiting Queue</option>
+          </select>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" id="btn-recommend">
+            <span>✨ Get AI Recommendations</span>
+          </button>
+          <button type="button" class="btn btn-secondary" id="btn-show-all">
+            <span>📋 Reset / Show All</span>
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Google Maps Interactive Station Map -->
+    <section class="section-card map-section">
+      <div class="section-header">
+        <h2>🗺️ Interactive EV Station Map (Hyderabad)</h2>
+        <div class="map-header-actions">
+          <button id="btn-use-location" class="btn btn-sm btn-secondary" type="button" title="Find nearby stations using browser geolocation">
+            📍 Use My Location
+          </button>
+          <span class="badge badge-secondary">Google Maps JavaScript API</span>
+        </div>
+      </div>
+      <p class="section-subtitle">Visualizes charging station hubs across Hyderabad. Markers show port availability and wait times. Selecting a station or recommendation synchronizes the map view.</p>
+
+      <!-- Fallback / Setup Banner if Google Maps API key is missing -->
+      <div id="map-fallback-banner" class="map-fallback-banner" style="display: none;">
+        <div class="fallback-icon">🗺️</div>
+        <div class="fallback-content">
+          <h4>Google Maps API Key Setup Required</h4>
+          <p>An API key is required to render the interactive street map and road routing. To enable Google Maps:</p>
+          <ol>
+            <li>Open <code>frontend/script.js</code></li>
+            <li>Replace <code>YOUR_GOOGLE_MAPS_API_KEY</code> with your restricted Google Cloud API key.</li>
+            <li>Ensure the <strong>Maps JavaScript API</strong> (and optionally <strong>Directions API</strong>) is enabled.</li>
+          </ol>
+          <p class="note"><strong>Safety Notice:</strong> All other features (database table, recommendation engine, demand forecasting, congestion alerts) remain 100% operational even without a Maps API key.</p>
+        </div>
+      </div>
+
+      <!-- The Google Map container -->
+      <div id="map" class="map-viewport"></div>
+
+      <!-- Live Road Routing Bar (when origin and destination are set) -->
+      <div id="routing-summary-box" class="routing-summary-box" style="display: none;">
+        <div class="route-info">
+          <span class="route-icon">🚗</span>
+          <div>
+            <strong id="route-destination-name">Navigating to Station</strong>
+            <p id="route-metrics">Road Distance: -- km | Est. Travel Time: -- mins</p>
+          </div>
+        </div>
+        <button id="btn-clear-route" class="btn btn-sm btn-secondary" type="button">Clear Route</button>
+      </div>
+    </section>
+
+    <!-- Main Results Grid -->
+    <div class="content-grid">
+      <!-- Recommendations Section -->
+      <section class="section-card recommendations-container">
+        <div class="section-header">
+          <h2>🏆 Ranked Station Recommendations</h2>
+          <span id="recommend-count-badge" class="badge badge-success">5 Evaluated</span>
+        </div>
+        <p class="section-subtitle">Ranked using available ports, distance, charger compatibility, wait times, and demand levels.</p>
+
+        <div id="recommend-loading" class="loading-state" style="display: none;">
+          <div class="spinner"></div>
+          <p>Analyzing station metrics and ranking options...</p>
+        </div>
+
+        <div id="recommend-error" class="error-state" style="display: none;"></div>
+
+        <div id="recommend-list" class="station-cards-grid">
+          <!-- Dynamically populated via script.js -->
+        </div>
+      </section>
+
+      <!-- Demand Prediction Section (Module 4) -->
+      <section class="section-card demand-container">
+        <div class="section-header">
+          <h2>📈 Charging Demand Prediction</h2>
+          <span id="model-dataset-badge" class="badge badge-info">Loading Model Metadata...</span>
+        </div>
+        <p class="section-subtitle">Predicts individual EV session energy demand (kWh) across 24 hours to help schedule off-peak charging.</p>
+
+        <!-- Demand Controls -->
+        <div class="demand-controls">
+          <div class="form-group-inline">
+            <label for="demand-hour">Hour (0-23):</label>
+            <select id="demand-hour">
+              <!-- Populated by script.js with 00:00 to 23:00 -->
+            </select>
+          </div>
+
+          <div class="form-group-inline">
+            <label for="demand-day">Day:</label>
+            <select id="demand-day">
+              <option value="0">Monday</option>
+              <option value="1">Tuesday</option>
+              <option value="2" selected>Wednesday</option>
+              <option value="3">Thursday</option>
+              <option value="4">Friday</option>
+              <option value="5">Saturday</option>
+              <option value="6">Sunday</option>
+            </select>
+          </div>
+
+          <button id="btn-predict-demand" class="btn btn-sm btn-primary">Predict Demand</button>
+        </div>
+
+        <!-- Demand Stat Cards -->
+        <div class="demand-summary-card">
+          <div class="demand-metric">
+            <span class="metric-label">Predicted Demand</span>
+            <span id="demand-kwh" class="metric-value">-- kWh</span>
+          </div>
+          <div class="demand-metric">
+            <span class="metric-label">Demand Level</span>
+            <span id="demand-level-badge" class="badge badge-warning">--</span>
+          </div>
+          <div class="demand-metric">
+            <span class="metric-label">Model Verification</span>
+            <span id="model-name" class="metric-subvalue">RandomForestRegressor</span>
+          </div>
+        </div>
+
+        <div class="advisory-box">
+          <span class="advisory-title">💡 System Advisory:</span>
+          <p id="demand-advisory">Loading ML prediction...</p>
+        </div>
+
+        <!-- 24-Hour Forecast Visualizer -->
+        <div class="forecast-section">
+          <h3>24-Hour Hourly Demand Forecast (kWh)</h3>
+          <div id="hourly-chart" class="hourly-bars-container">
+            <!-- 24 responsive CSS bars dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Model Evaluation Metrics Box (Transparent Viva Proof) -->
+        <div class="metrics-footer">
+          <div class="metric-pill"><span>MAE:</span> <strong id="metric-mae">--</strong></div>
+          <div class="metric-pill"><span>RMSE:</span> <strong id="metric-rmse">--</strong></div>
+          <div class="metric-pill"><span>Split:</span> <strong id="metric-split">--</strong></div>
+          <div class="metric-pill"><span>Trained Records:</span> <strong id="metric-train-records">--</strong></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Complete Database Table Section (Module 5 & 7) -->
+    <section class="section-card database-section">
+      <div class="section-header">
+        <h2>🗄️ All Monitored Stations (MySQL Database)</h2>
+        <span class="badge badge-secondary">Sample Demonstration Records</span>
+      </div>
+      <p class="section-subtitle">Real-time status retrieved directly from MySQL table <code>charging_stations</code>.</p>
+
+      <div class="table-responsive">
+        <table class="stations-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Station Name</th>
+              <th>Location</th>
+              <th>Distance</th>
+              <th>Charger Type</th>
+              <th>Capacity</th>
+              <th>Available Ports</th>
+              <th>Est. Wait</th>
+              <th>Demand</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="stations-table-body">
+            <tr>
+              <td colspan="10" class="text-center">Loading stations from database...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p><strong>ChargeFindr AI</strong> — Final Year Project | Review Date: 26 October 2026</p>
+    <p class="footer-note">Note: Distances and station metrics reflect verified demonstration sample data. Demand predictions generated using a trained Random Forest Regressor on Figshare EV charging transactions.</p>
+  </footer>
+
+  <!-- Authentication Modal (Login / Register) -->
+  <div id="auth-modal-backdrop" class="modal-backdrop" style="display: none;">
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="modal-tabs">
+          <button type="button" id="tab-login" class="tab-btn active">Sign In</button>
+          <button type="button" id="tab-register" class="tab-btn">Create Account</button>
+        </div>
+        <button type="button" id="btn-close-auth-modal" class="btn-close-modal" aria-label="Close">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div id="auth-feedback" class="auth-feedback" style="display: none;"></div>
+
+        <!-- Login Form -->
+        <form id="form-login" class="auth-form">
+          <div class="form-group">
+            <label for="login-email">Email Address</label>
+            <input type="email" id="login-email" placeholder="you@example.com" required autocomplete="email">
+          </div>
+          <div class="form-group">
+            <label for="login-password">Password</label>
+            <input type="password" id="login-password" placeholder="••••••••" required autocomplete="current-password">
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary btn-block" id="btn-submit-login">Sign In</button>
+          </div>
+        </form>
+
+        <!-- Register Form -->
+        <form id="form-register" class="auth-form" style="display: none;">
+          <div class="form-group">
+            <label for="register-name">Full Name</label>
+            <input type="text" id="register-name" placeholder="Srinu Mudavath" required autocomplete="name">
+          </div>
+          <div class="form-group">
+            <label for="register-email">Email Address</label>
+            <input type="email" id="register-email" placeholder="you@example.com" required autocomplete="email">
+          </div>
+          <div class="form-group">
+            <label for="register-password">Password</label>
+            <input type="password" id="register-password" placeholder="Min. 8 characters" minlength="8" required autocomplete="new-password">
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary btn-block" id="btn-submit-register">Create Account</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Telemetry Modal (RBAC Demonstration) -->
+  <div id="admin-modal-backdrop" class="modal-backdrop" style="display: none;">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 style="display:flex; align-items:center; gap:0.5rem; color:#f8fafc; font-size:1.1rem;">🛡️ Administrator Dashboard</h3>
+        <button type="button" id="btn-close-admin-modal" class="btn-close-modal" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="admin-telemetry-content" style="padding: 0.5rem 0;">
+          <div class="text-center" style="color: var(--text-muted);">Loading admin telemetry...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
+

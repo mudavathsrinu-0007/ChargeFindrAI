@@ -1,0 +1,24 @@
+{
+  "model_type": "RandomForestRegressor",
+  "dataset": "Figshare EV Charging Transactions (72,856 records)",
+  "train_samples": 58284,
+  "test_samples": 14572,
+  "feature_columns": [
+    "hour",
+    "day_of_week",
+    "is_weekend",
+    "month",
+    "charger_type_code",
+    "loc_public_area",
+    "loc_apartment",
+    "loc_resort",
+    "loc_hotel",
+    "loc_company"
+  ],
+  "metrics": {
+    "MAE": 10.2878,
+    "RMSE": 13.4438,
+    "R2_Score": 0.0667
+  },
+  "target_variable": "Demand (kWh)"
+}
