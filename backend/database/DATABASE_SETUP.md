@@ -165,15 +165,33 @@ Expected output:
 ==================================================
 ```
 
-### Step 4: Seed Default Administrator Account
-To create or reset the standard system administrator account:
+### Step 4: Seed Administrator Account
+To provision the initial system administrator account:
 ```powershell
+# Interactive secure prompt:
+python backend/scripts/seed_admin.py
+
+# Or supply credentials via arguments:
+python backend/scripts/seed_admin.py --name "System Administrator" --email "admin@chargefindr.local" --password "YourStrongPasswordHere"
+
+# Or via environment variable:
+$env:ADMIN_INITIAL_PASSWORD="YourStrongPasswordHere"
 python backend/scripts/seed_admin.py
 ```
-Default Administrator Credentials:
+
+> [!WARNING]
+> **Production Security Warning**:  
+> The password `AdminPass123!` (referenced in local demo documentation and automated test fixtures) is strictly for local sandbox demonstration. It **must not** be used in any production deployment. Always specify a strong, unique password when provisioning administrator accounts.
+
+Local Demonstration Default Credentials:
 - **Email**: `admin@chargefindr.local`
-- **Password**: `AdminPass123!`
+- **Demo Password**: `AdminPass123!` (Local sandbox & test suites only)
 - **Role**: `admin`
+
+Password Resolution Order in `backend/scripts/seed_admin.py`:
+1. CLI argument (`--password`)
+2. Environment variable (`ADMIN_INITIAL_PASSWORD`)
+3. Interactive hidden console prompt (`getpass.getpass`)
 
 ---
 
