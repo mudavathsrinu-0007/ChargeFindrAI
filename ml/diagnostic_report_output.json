@@ -1,0 +1,29 @@
+{
+  "dataset_rows": 72856,
+  "dataset_cols": 13,
+  "train_rows": 58284,
+  "test_rows": 14572,
+  "split_ratio": "80/20 Chronological",
+  "model_performance": {
+    "MAE": 10.2878,
+    "RMSE": 13.4438,
+    "R2": 0.0667
+  },
+  "mean_baseline": {
+    "MAE": 10.8678,
+    "RMSE": 13.9207,
+    "R2": -0.0007
+  },
+  "feature_importances": {
+    "hour": 0.5239,
+    "month": 0.1478,
+    "day_of_week": 0.1205,
+    "charger_type_code": 0.0673,
+    "loc_hotel": 0.0321,
+    "loc_public_area": 0.0284,
+    "loc_apartment": 0.0261,
+    "loc_resort": 0.0218,
+    "loc_company": 0.0192,
+    "is_weekend": 0.0129
+  }
+}

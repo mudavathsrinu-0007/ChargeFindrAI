@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,35 +10,172 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
-  <!-- Top Navigation & Header -->
-  <header class="navbar">
-    <div class="nav-container">
-      <div class="brand">
-        <span class="brand-icon">⚡</span>
-        <div>
-          <h1>ChargeFindr AI</h1>
-          <p class="tagline">Intelligent EV Station Recommendation & Demand Prediction System</p>
+  <!-- ========================================================================
+       UNAUTHENTICATED LANDING VIEW (Full Screen EV Charging Background)
+       ======================================================================== -->
+  <div id="auth-landing-view" class="auth-landing-view">
+    <div class="auth-landing-overlay">
+      <div class="auth-landing-content">
+        <!-- Left Column: Branding, Value Propositions, Highlights -->
+        <div class="auth-brand-side">
+          <div class="auth-brand-badge">⚡ Intelligent EV Infrastructure</div>
+          <h1 class="auth-brand-title">ChargeFindr AI</h1>
+          <p class="auth-brand-tagline">
+            Next-generation Electric Vehicle Station Recommendation, Dynamic Congestion Rerouting & Demand Forecasting
+          </p>
+
+          <div class="auth-features-list">
+            <div class="auth-feature-card">
+              <div class="feature-icon">🎯</div>
+              <div class="feature-details">
+                <strong>Multi-Criteria Smart Ranking</strong>
+                <p>Balances distance, queue wait times, and charging speeds with transparent scoring rationale.</p>
+              </div>
+            </div>
+
+            <div class="auth-feature-card">
+              <div class="feature-icon">🗺️</div>
+              <div class="feature-details">
+                <strong>Interactive Google Maps & Proximity Routing</strong>
+                <p>Location search, radius filtering, station status windows, and turn-by-turn directions.</p>
+              </div>
+            </div>
+
+            <div class="auth-feature-card">
+              <div class="feature-icon">📊</div>
+              <div class="feature-details">
+                <strong>Predictive Energy Demand Analytics</strong>
+                <p>24-hour hourly load forecasting trained on Figshare EV charging transaction patterns.</p>
+              </div>
+            </div>
+
+            <div class="auth-feature-card">
+              <div class="feature-icon">💡</div>
+              <div class="feature-details">
+                <strong>Automated Congestion Alert System</strong>
+                <p>Real-time queue bottleneck detection with Haversine-based optimal alternative rerouting.</p>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="nav-actions">
-        <div class="system-status">
-          <span id="status-indicator" class="status-dot"></span>
-          <span id="status-text">Connecting to backend...</span>
-        </div>
-        <div id="auth-nav-container" class="auth-nav-container">
-          <button type="button" id="btn-open-login" class="btn btn-sm btn-secondary">🔑 Sign In</button>
-          <button type="button" id="btn-open-register" class="btn btn-sm btn-primary">📝 Register</button>
+
+        <!-- Right Column: Login & Register Panel -->
+        <div class="auth-panel-side">
+          <div class="auth-card">
+            <div class="modal-header">
+              <div class="modal-tabs">
+                <button type="button" id="tab-login" class="tab-btn active">Sign In</button>
+                <button type="button" id="tab-register" class="tab-btn">Create Account</button>
+              </div>
+            </div>
+
+            <div class="modal-body">
+              <div id="auth-feedback" class="auth-feedback" style="display: none;"></div>
+
+              <!-- Login Form -->
+              <form id="form-login" class="auth-form">
+                <div class="form-group">
+                  <label for="login-email">Email Address</label>
+                  <input type="email" id="login-email" placeholder="you@example.com" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                  <label for="login-password">Password</label>
+                  <input type="password" id="login-password" placeholder="••••••••" required autocomplete="current-password">
+                </div>
+                <div class="modal-footer">
+                  <button type="submit" class="btn btn-primary btn-block" id="btn-submit-login">Sign In</button>
+                </div>
+              </form>
+
+              <!-- Register Form -->
+              <form id="form-register" class="auth-form" style="display: none;">
+                <div class="form-group">
+                  <label for="register-name">Full Name</label>
+                  <input type="text" id="register-name" placeholder="Srinu Mudavath" required autocomplete="name">
+                </div>
+                <div class="form-group">
+                  <label for="register-email">Email Address</label>
+                  <input type="email" id="register-email" placeholder="you@example.com" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                  <label for="register-password">Password</label>
+                  <input type="password" id="register-password" placeholder="Min. 8 characters" minlength="8" required
+                    autocomplete="new-password">
+                </div>
+                <div class="form-group">
+                  <label for="register-confirm-password">Confirm Password</label>
+                  <input type="password" id="register-confirm-password" placeholder="Confirm your password" minlength="8" required
+                    autocomplete="new-password">
+                </div>
+                <div class="modal-footer">
+                  <button type="submit" class="btn btn-primary btn-block" id="btn-submit-register">Create Account</button>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  </header>
+  </div>
+
+  <!-- ========================================================================
+       AUTHENTICATED APPLICATION VIEW (Dashboard, Maps, Analytics)
+       ======================================================================== -->
+  <div id="app-view" class="app-view" style="display: none;">
+    <!-- Top Navigation & Header -->
+    <header class="navbar">
+      <div class="nav-container">
+        <div class="brand">
+          <span class="brand-icon">⚡</span>
+          <div>
+            <h1>ChargeFindr AI</h1>
+            <p class="tagline">Intelligent EV Station Recommendation & Demand Prediction System</p>
+          </div>
+        </div>
+        <div class="nav-actions">
+          <div class="system-status">
+            <span id="status-indicator" class="status-dot"></span>
+            <span id="status-text">Connecting to backend...</span>
+          </div>
+          <div id="auth-nav-container" class="auth-nav-container">
+            <span id="user-badge" class="user-badge" style="display: none;"></span>
+            <button type="button" id="btn-admin-modal-nav" class="btn btn-sm btn-secondary" style="display: none;">🛡️ Admin Dashboard</button>
+            <button type="button" id="btn-logout" class="btn btn-sm btn-secondary">🚪 Sign Out</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Application Sub-Navigation -->
+    <nav class="app-subnav">
+      <div class="nav-container subnav-container">
+        <button type="button" class="subnav-btn active" id="nav-btn-dashboard" onclick="switchAppTab('dashboard')">
+          <span class="subnav-icon">🗺️</span> <span>Dashboard & Map</span>
+        </button>
+        <button type="button" class="subnav-btn" id="nav-btn-book" onclick="switchAppTab('book')">
+          <span class="subnav-icon">📅</span> <span>Book a Slot</span>
+        </button>
+        <button type="button" class="subnav-btn" id="nav-btn-walkin" onclick="switchAppTab('walkin')">
+          <span class="subnav-icon">⚡</span> <span>Rapid Charging</span>
+        </button>
+        <button type="button" class="subnav-btn" id="nav-btn-my-bookings" onclick="switchAppTab('my-bookings')">
+          <span class="subnav-icon">📋</span> <span>My Bookings</span>
+        </button>
+        <button type="button" class="subnav-btn" id="nav-btn-my-queue" onclick="switchAppTab('my-queue')">
+          <span class="subnav-icon">🎫</span> <span>My Queue</span>
+        </button>
+      </div>
+    </nav>
 
   <main class="dashboard-container">
+    <!-- Tab View 1: Main Dashboard (Preserved) -->
+    <div id="view-dashboard" class="app-tab-view active">
     <!-- Smart Alert Banner (Module 6) -->
     <div id="alert-banner" class="alert-banner" style="display: none;">
       <span class="alert-icon">💡</span>
-      <span id="alert-message">Notice: VoltWay Charging (Gachibowli) is currently congested (0 ports). EcoCharge & GreenCharge Hub are recommended for quick turnaround.</span>
+      <span id="alert-message">Checking station congestion status...</span>
     </div>
 
     <!-- Top Controls: Modules 1 & 3 (Recommendation) -->
@@ -89,13 +227,15 @@
       <div class="section-header">
         <h2>🗺️ Interactive EV Station Map (Hyderabad)</h2>
         <div class="map-header-actions">
-          <button id="btn-use-location" class="btn btn-sm btn-secondary" type="button" title="Find nearby stations using browser geolocation">
+          <button id="btn-use-location" class="btn btn-sm btn-secondary" type="button"
+            title="Find nearby stations using browser geolocation">
             📍 Use My Location
           </button>
           <span class="badge badge-secondary">Google Maps JavaScript API</span>
         </div>
       </div>
-      <p class="section-subtitle">Visualizes charging station hubs across Hyderabad. Markers show port availability and wait times. Selecting a station or recommendation synchronizes the map view.</p>
+      <p class="section-subtitle">Visualizes charging station hubs across Hyderabad. Markers show port availability and
+        wait times. Selecting a station or recommendation synchronizes the map view.</p>
 
       <!-- Fallback / Setup Banner if Google Maps API key is missing -->
       <div id="map-fallback-banner" class="map-fallback-banner" style="display: none;">
@@ -106,9 +246,11 @@
           <ol>
             <li>Open <code>frontend/script.js</code></li>
             <li>Replace <code>YOUR_GOOGLE_MAPS_API_KEY</code> with your restricted Google Cloud API key.</li>
-            <li>Ensure the <strong>Maps JavaScript API</strong> (and optionally <strong>Directions API</strong>) is enabled.</li>
+            <li>Ensure the <strong>Maps JavaScript API</strong> (and optionally <strong>Directions API</strong>) is
+              enabled.</li>
           </ol>
-          <p class="note"><strong>Safety Notice:</strong> All other features (database table, recommendation engine, demand forecasting, congestion alerts) remain 100% operational even without a Maps API key.</p>
+          <p class="note"><strong>Safety Notice:</strong> All other features (database table, recommendation engine,
+            demand forecasting, congestion alerts) remain 100% operational even without a Maps API key.</p>
         </div>
       </div>
 
@@ -136,7 +278,8 @@
           <h2>🏆 Ranked Station Recommendations</h2>
           <span id="recommend-count-badge" class="badge badge-success">5 Evaluated</span>
         </div>
-        <p class="section-subtitle">Ranked using available ports, distance, charger compatibility, wait times, and demand levels.</p>
+        <p class="section-subtitle">Ranked using available ports, distance, charger compatibility, wait times, and
+          demand levels.</p>
 
         <div id="recommend-loading" class="loading-state" style="display: none;">
           <div class="spinner"></div>
@@ -156,7 +299,8 @@
           <h2>📈 Charging Demand Prediction</h2>
           <span id="model-dataset-badge" class="badge badge-info">Loading Model Metadata...</span>
         </div>
-        <p class="section-subtitle">Predicts individual EV session energy demand (kWh) across 24 hours to help schedule off-peak charging.</p>
+        <p class="section-subtitle">Predicts individual EV session energy consumption (kWh) using the Figshare Public Area benchmark across 24 hours to help schedule
+          off-peak charging.</p>
 
         <!-- Demand Controls -->
         <div class="demand-controls">
@@ -206,7 +350,7 @@
 
         <!-- 24-Hour Forecast Visualizer -->
         <div class="forecast-section">
-          <h3>24-Hour Hourly Demand Forecast (kWh)</h3>
+          <h3>24-Hour Hourly Demand Profile (Illustrative Session kWh across 00:00–23:00)</h3>
           <div id="hourly-chart" class="hourly-bars-container">
             <!-- 24 responsive CSS bars dynamically populated -->
           </div>
@@ -216,6 +360,7 @@
         <div class="metrics-footer">
           <div class="metric-pill"><span>MAE:</span> <strong id="metric-mae">--</strong></div>
           <div class="metric-pill"><span>RMSE:</span> <strong id="metric-rmse">--</strong></div>
+          <div class="metric-pill"><span>R²:</span> <strong id="metric-r2">--</strong></div>
           <div class="metric-pill"><span>Split:</span> <strong id="metric-split">--</strong></div>
           <div class="metric-pill"><span>Trained Records:</span> <strong id="metric-train-records">--</strong></div>
         </div>
@@ -225,10 +370,8 @@
     <!-- Complete Database Table Section (Module 5 & 7) -->
     <section class="section-card database-section">
       <div class="section-header">
-        <h2>🗄️ All Monitored Stations (MySQL Database)</h2>
-        <span class="badge badge-secondary">Sample Demonstration Records</span>
+        <h2>🗄️ All Monitored Stations</h2>
       </div>
-      <p class="section-subtitle">Real-time status retrieved directly from MySQL table <code>charging_stations</code>.</p>
 
       <div class="table-responsive">
         <table class="stations-table">
@@ -240,8 +383,8 @@
               <th>Distance</th>
               <th>Charger Type</th>
               <th>Capacity</th>
-              <th>Available Ports</th>
-              <th>Est. Wait</th>
+              <th>Available Ports <small style="color:var(--text-dim);">(Demo)</small></th>
+              <th>Est. Wait <small style="color:var(--text-dim);">(Demo)</small></th>
               <th>Demand</th>
               <th>Status</th>
             </tr>
@@ -254,74 +397,534 @@
         </table>
       </div>
     </section>
+    </div> <!-- End #view-dashboard -->
+
+    <!-- ====================================================================
+         Tab View 2: Reserved Slot Booking
+         ==================================================================== -->
+    <div id="view-book" class="app-tab-view" style="display: none;">
+      <section class="section-card">
+        <div class="section-header">
+          <div>
+            <h2>📅 Reserved EV Slot Booking</h2>
+            <p class="section-subtitle">Reserve a physical charging port ahead of time. Zero waiting time guaranteed upon arrival.</p>
+          </div>
+          <span class="badge badge-primary">Guaranteed Bay Reservation</span>
+        </div>
+
+        <div class="booking-grid">
+          <!-- Left: Booking Form -->
+          <div class="booking-form-col">
+            <form id="form-slot-booking" class="filter-form booking-inputs">
+              <div class="form-group">
+                <label for="book-station-select">Select Charging Station *</label>
+                <select id="book-station-select" required>
+                  <option value="">-- Choose an EV Station --</option>
+                </select>
+              </div>
+
+              <div id="book-station-info-pill" class="station-meta-pill" style="display: none;">
+                <span id="book-station-address">📍 Location</span>
+                <span id="book-station-type">⚡ Type</span>
+                <span id="book-station-ports">🔌 Reserved Ports</span>
+              </div>
+
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label for="book-driver-name">Driver Full Name *</label>
+                  <input type="text" id="book-driver-name" required placeholder="Driver Name">
+                </div>
+                <div class="form-group">
+                  <label for="book-vehicle-model">Vehicle Model *</label>
+                  <input type="text" id="book-vehicle-model" required placeholder="e.g. Tata Nexon EV">
+                </div>
+              </div>
+
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label for="book-vehicle-reg">Vehicle Registration No. *</label>
+                  <input type="text" id="book-vehicle-reg" required placeholder="e.g. TS09EA1234">
+                </div>
+                <div class="form-group">
+                  <label for="book-duration">Charging Duration *</label>
+                  <select id="book-duration" required>
+                    <option value="30">30 Minutes (Quick Top-Up)</option>
+                    <option value="60" selected>60 Minutes (Standard Full Charge)</option>
+                    <option value="90">90 Minutes (Deep Cycle)</option>
+                    <option value="120">120 Minutes (High Capacity Pack)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="book-date">Reservation Date *</label>
+                <input type="date" id="book-date" required>
+              </div>
+
+              <div id="book-form-feedback" class="auth-feedback" style="display: none;"></div>
+            </form>
+          </div>
+
+          <!-- Right: Interactive Slot Grid -->
+          <div class="booking-slots-col">
+            <div class="slots-header">
+              <div>
+                <h3 style="margin: 0; font-size: 1rem; color: var(--text-main);">Available Time Slots (08:00 – 22:00)</h3>
+                <span style="font-size: 0.8rem; color: var(--text-muted);" id="slots-date-label">Select station & date to load slots</span>
+              </div>
+              <div class="slots-legend">
+                <span class="legend-item"><span class="legend-color legend-avail"></span> Available</span>
+                <span class="legend-item"><span class="legend-color legend-selected"></span> Selected</span>
+                <span class="legend-item"><span class="legend-color legend-booked"></span> Booked / Past</span>
+              </div>
+            </div>
+
+            <div id="slots-loading" style="display: none;" class="loading-state">
+              <div class="spinner"></div>
+              <p>Checking live port availability...</p>
+            </div>
+
+            <div id="slots-matrix" class="slots-matrix-grid">
+              <div class="slots-empty-notice">Please choose an EV station and date on the left to see live slot availability.</div>
+            </div>
+
+            <!-- Selected Slot Details & Confirm Action -->
+            <div id="slot-confirmation-box" class="slot-confirmation-box" style="display: none;">
+              <div class="confirmation-summary">
+                <div>
+                  <span class="summary-label">Selected Slot:</span>
+                  <strong id="confirm-slot-time" class="summary-value">--:-- to --:--</strong>
+                </div>
+                <div>
+                  <span class="summary-label">Station:</span>
+                  <span id="confirm-slot-station" class="summary-value">--</span>
+                </div>
+                <div>
+                  <span class="summary-label">Duration:</span>
+                  <span id="confirm-slot-duration" class="summary-value">60 mins</span>
+                </div>
+              </div>
+              <button type="button" id="btn-confirm-booking" class="btn btn-primary btn-block">
+                <span>⚡ Confirm & Book Slot Now</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ====================================================================
+         Tab View 3: Rapid Walk-in Charging Queue
+         ==================================================================== -->
+    <div id="view-walkin" class="app-tab-view" style="display: none;">
+      <section class="section-card">
+        <div class="section-header">
+          <div>
+            <h2>⚡ Rapid Walk-in Charging Queue</h2>
+            <p class="section-subtitle">No prior reservation needed. Join the live virtual queue on your way and get charged in turn.</p>
+          </div>
+          <span class="badge badge-success">First-Come, First-Served</span>
+        </div>
+
+        <div class="walkin-grid">
+          <!-- Left: Queue Telemetry & Station Selection -->
+          <div class="walkin-telemetry-col">
+            <div class="form-group">
+              <label for="walkin-station-select">Choose Destination Station *</label>
+              <select id="walkin-station-select" required>
+                <option value="">-- Select an EV Station --</option>
+              </select>
+            </div>
+
+            <!-- Live Queue Metrics Card -->
+            <div id="walkin-metrics-card" class="walkin-metrics-card" style="display: none;">
+              <div class="walkin-metrics-header">
+                <h4 id="walkin-card-station-name" style="margin: 0; color: var(--text-main);">Station Metrics</h4>
+                <span id="walkin-card-location" style="font-size: 0.8rem; color: var(--text-muted);">Hyderabad</span>
+              </div>
+              <div class="walkin-stats-row">
+                <div class="walkin-stat">
+                  <span class="stat-number" id="walkin-stat-ports">--</span>
+                  <span class="stat-title">Walk-in Ports</span>
+                </div>
+                <div class="walkin-stat">
+                  <span class="stat-number" id="walkin-stat-waiting">--</span>
+                  <span class="stat-title">Waiting Ahead</span>
+                </div>
+                <div class="walkin-stat">
+                  <span class="stat-number stat-highlight" id="walkin-stat-wait">-- m</span>
+                  <span class="stat-title">Est. Wait Time</span>
+                </div>
+              </div>
+              <p class="walkin-note">Capacity isolated: Walk-in drivers use dedicated ports and cannot be preempted by reserved bookings.</p>
+            </div>
+
+            <div id="walkin-has-active-alert" class="alert-banner" style="display: none; margin-top: 1rem;">
+              <span class="alert-icon">🎫</span>
+              <span id="walkin-active-alert-msg">You currently hold an active ticket.</span>
+              <button type="button" class="btn btn-sm btn-secondary" onclick="switchAppTab('my-queue')">View My Queue</button>
+            </div>
+          </div>
+
+          <!-- Right: Driver & Vehicle Info -->
+          <div class="walkin-form-col">
+            <form id="form-join-queue" class="filter-form">
+              <h3 style="font-size: 1rem; margin-top: 0; margin-bottom: 0.75rem; color: var(--text-main);">Driver & Vehicle Details</h3>
+              <div class="form-group">
+                <label for="walkin-driver-name">Driver Full Name *</label>
+                <input type="text" id="walkin-driver-name" required placeholder="Driver Name">
+              </div>
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label for="walkin-vehicle-model">Vehicle Model *</label>
+                  <input type="text" id="walkin-vehicle-model" required placeholder="e.g. Tata Tiago EV">
+                </div>
+                <div class="form-group">
+                  <label for="walkin-vehicle-reg">Registration No. *</label>
+                  <input type="text" id="walkin-vehicle-reg" required placeholder="e.g. TS08FA9999">
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="walkin-charger-type">Required Charger *</label>
+                <select id="walkin-charger-type" required>
+                  <option value="Fast DC">Fast DC (Rapid 60-120 kW)</option>
+                  <option value="AC Type 2">AC Type 2 (Standard 22 kW)</option>
+                </select>
+              </div>
+
+              <div id="walkin-feedback" class="auth-feedback" style="display: none;"></div>
+
+              <div class="form-actions" style="margin-top: 1rem;">
+                <button type="submit" id="btn-join-queue" class="btn btn-primary btn-block">
+                  <span>⚡ Join Rapid Charging Queue</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ====================================================================
+         Tab View 4: My Reserved Slots
+         ==================================================================== -->
+    <div id="view-my-bookings" class="app-tab-view" style="display: none;">
+      <section class="section-card">
+        <div class="section-header">
+          <div>
+            <h2>📋 My Reserved Charging Slots</h2>
+            <p class="section-subtitle">Real-time status of your reserved slots with cancellation and alternative rescheduling options.</p>
+          </div>
+          <button type="button" class="btn btn-sm btn-primary" onclick="switchAppTab('book')">+ Book New Slot</button>
+        </div>
+
+        <!-- Booking Policy Notice -->
+        <div class="policy-notice-bar">
+          <span>ℹ️ <strong>Cancellation Policy:</strong> Cancellations are permitted at least 30 minutes before your slot start time. A 15-minute grace period is provided upon start.</span>
+        </div>
+
+        <div id="my-bookings-feedback" class="auth-feedback" style="display: none;"></div>
+
+        <div class="table-responsive" style="margin-top: 1rem;">
+          <table class="stations-table my-bookings-table">
+            <thead>
+              <tr>
+                <th>Booking Ref</th>
+                <th>Station & Location</th>
+                <th>Port & Charger</th>
+                <th>Scheduled Time</th>
+                <th>Duration</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="my-bookings-tbody">
+              <tr><td colspan="7" class="text-center">Loading your reservations...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- ====================================================================
+         Tab View 5: Live Queue Tracker
+         ==================================================================== -->
+    <div id="view-my-queue" class="app-tab-view" style="display: none;">
+      <section class="section-card">
+        <div class="section-header">
+          <div>
+            <h2>🎫 Live Queue Tracker</h2>
+            <p class="section-subtitle">Dynamic updates on your queue standing, wait time, and port readiness.</p>
+          </div>
+          <button type="button" class="btn btn-sm btn-secondary" id="btn-refresh-queue">🔄 Refresh Status</button>
+        </div>
+
+        <div id="my-queue-feedback" class="auth-feedback" style="display: none;"></div>
+
+        <!-- Active Ticket Container -->
+        <div id="queue-active-container" style="display: none;">
+          <div class="queue-hero-card">
+            <div class="queue-hero-top">
+              <div class="queue-ticket-badge" id="queue-hero-ticket">WQ-S1-XXXX</div>
+              <span class="badge" id="queue-hero-status-badge">WAITING</span>
+            </div>
+
+            <div class="queue-position-display">
+              <span class="position-label">Current Queue Position</span>
+              <div class="position-number" id="queue-hero-position">#1</div>
+              <span class="position-subtitle" id="queue-hero-pos-desc">Next in line for rapid charging!</span>
+            </div>
+
+            <div class="queue-details-grid">
+              <div class="q-detail-item">
+                <span class="q-label">Station:</span>
+                <span class="q-val" id="queue-hero-station">--</span>
+              </div>
+              <div class="q-detail-item">
+                <span class="q-label">Location:</span>
+                <span class="q-val" id="queue-hero-location">--</span>
+              </div>
+              <div class="q-detail-item">
+                <span class="q-label">Estimated Wait:</span>
+                <span class="q-val highlight" id="queue-hero-wait">-- mins</span>
+              </div>
+              <div class="q-detail-item">
+                <span class="q-label">Charger Type:</span>
+                <span class="q-val" id="queue-hero-charger">--</span>
+              </div>
+              <div class="q-detail-item">
+                <span class="q-label">Driver:</span>
+                <span class="q-val" id="queue-hero-driver">--</span>
+              </div>
+              <div class="q-detail-item">
+                <span class="q-label">Vehicle:</span>
+                <span class="q-val" id="queue-hero-vehicle">--</span>
+              </div>
+            </div>
+
+            <div class="queue-card-actions">
+              <button type="button" id="btn-leave-queue" class="btn btn-danger">
+                <span>🚪 Leave Queue</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty Queue State -->
+        <div id="queue-empty-container" class="empty-queue-card">
+          <div class="empty-icon">⚡</div>
+          <h3>You are not currently in any walk-in queue</h3>
+          <p>Need a quick charge without prior booking? Join a station queue to reserve your spot in line.</p>
+          <button type="button" class="btn btn-primary" onclick="switchAppTab('walkin')">Join a Rapid Queue</button>
+        </div>
+      </section>
+    </div>
   </main>
 
   <footer class="footer">
     <p><strong>ChargeFindr AI</strong> — Final Year Project | Review Date: 26 October 2026</p>
-    <p class="footer-note">Note: Distances and station metrics reflect verified demonstration sample data. Demand predictions generated using a trained Random Forest Regressor on Figshare EV charging transactions.</p>
+    <p class="footer-note">Note: Distances and station metrics reflect verified demonstration sample data. Demand
+      predictions generated using a trained Random Forest Regressor on Figshare EV charging transactions.</p>
   </footer>
+  </div> <!-- End #app-view -->
 
-  <!-- Authentication Modal (Login / Register) -->
-  <div id="auth-modal-backdrop" class="modal-backdrop" style="display: none;">
-    <div class="modal-container">
+  <!-- Alternative Slot Suggestions Modal -->
+  <div id="alternative-modal-backdrop" class="modal-backdrop" style="display: none;">
+    <div class="modal-container admin-modal-wide">
       <div class="modal-header">
-        <div class="modal-tabs">
-          <button type="button" id="tab-login" class="tab-btn active">Sign In</button>
-          <button type="button" id="tab-register" class="tab-btn">Create Account</button>
+        <div style="display:flex; align-items:center; gap:0.6rem;">
+          <span style="font-size:1.3rem;">🔄</span>
+          <div>
+            <h3 style="color:var(--text-main); font-size:1.1rem; margin:0;">Alternative Slot Suggestions</h3>
+            <span style="font-size:0.75rem; color:var(--text-muted);" id="alt-modal-subtitle">For Missed Booking</span>
+          </div>
         </div>
-        <button type="button" id="btn-close-auth-modal" class="btn-close-modal" aria-label="Close">&times;</button>
+        <button type="button" id="btn-close-alt-modal" class="btn-close-modal" aria-label="Close">&times;</button>
       </div>
 
       <div class="modal-body">
-        <div id="auth-feedback" class="auth-feedback" style="display: none;"></div>
+        <div id="alt-modal-feedback" class="auth-feedback" style="display: none;"></div>
+        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom: 1rem;">
+          Your earlier slot reservation elapsed past the 15-minute grace period. ChargeFindr AI has identified the following alternative slots available right now. Choose a slot below and click <strong>Rebook This Slot</strong> to confirm your new reservation.
+        </p>
 
-        <!-- Login Form -->
-        <form id="form-login" class="auth-form">
-          <div class="form-group">
-            <label for="login-email">Email Address</label>
-            <input type="email" id="login-email" placeholder="you@example.com" required autocomplete="email">
-          </div>
-          <div class="form-group">
-            <label for="login-password">Password</label>
-            <input type="password" id="login-password" placeholder="••••••••" required autocomplete="current-password">
-          </div>
-          <div class="modal-footer">
-            <button type="submit" class="btn btn-primary btn-block" id="btn-submit-login">Sign In</button>
-          </div>
-        </form>
-
-        <!-- Register Form -->
-        <form id="form-register" class="auth-form" style="display: none;">
-          <div class="form-group">
-            <label for="register-name">Full Name</label>
-            <input type="text" id="register-name" placeholder="Srinu Mudavath" required autocomplete="name">
-          </div>
-          <div class="form-group">
-            <label for="register-email">Email Address</label>
-            <input type="email" id="register-email" placeholder="you@example.com" required autocomplete="email">
-          </div>
-          <div class="form-group">
-            <label for="register-password">Password</label>
-            <input type="password" id="register-password" placeholder="Min. 8 characters" minlength="8" required autocomplete="new-password">
-          </div>
-          <div class="modal-footer">
-            <button type="submit" class="btn btn-primary btn-block" id="btn-submit-register">Create Account</button>
-          </div>
-        </form>
+        <div id="alt-slots-list" class="alt-slots-grid">
+          <div class="text-center" style="color:var(--text-muted);">Finding alternative slots...</div>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Admin Telemetry Modal (RBAC Demonstration) -->
+  <!-- Admin Telemetry & EV Station Management Modal (RBAC Protected) -->
   <div id="admin-modal-backdrop" class="modal-backdrop" style="display: none;">
-    <div class="modal-container">
+    <div class="modal-container admin-modal-wide">
       <div class="modal-header">
-        <h3 style="display:flex; align-items:center; gap:0.5rem; color:#f8fafc; font-size:1.1rem;">🛡️ Administrator Dashboard</h3>
+        <div style="display:flex; align-items:center; gap:0.6rem;">
+          <span style="font-size:1.3rem;">🛡️</span>
+          <div>
+            <h3 style="color:var(--text-main); font-size:1.1rem; margin:0;">Administrator Dashboard</h3>
+            <span style="font-size:0.75rem; color:var(--text-muted);">Station Management & System Telemetry</span>
+          </div>
+        </div>
         <button type="button" id="btn-close-admin-modal" class="btn-close-modal" aria-label="Close">&times;</button>
       </div>
+
+      <div class="modal-tabs admin-modal-tabs">
+        <button type="button" id="tab-admin-overview" class="tab-btn active">📊 System Overview</button>
+        <button type="button" id="tab-admin-stations" class="tab-btn">⚡ EV Stations CRUD</button>
+        <button type="button" id="tab-admin-bookings" class="tab-btn">📅 All Bookings</button>
+        <button type="button" id="tab-admin-queues" class="tab-btn">🎫 All Queues</button>
+      </div>
+
       <div class="modal-body">
-        <div id="admin-telemetry-content" style="padding: 0.5rem 0;">
-          <div class="text-center" style="color: var(--text-muted);">Loading admin telemetry...</div>
+        <div id="admin-feedback" class="auth-feedback" style="display: none;"></div>
+
+        <!-- Section 1: Overview Telemetry -->
+        <div id="admin-section-overview">
+          <div id="admin-telemetry-content" style="padding: 0.5rem 0;">
+            <div class="text-center" style="color: var(--text-muted);">Loading admin telemetry...</div>
+          </div>
+        </div>
+
+        <!-- Section 2: EV Stations CRUD -->
+        <div id="admin-section-stations" style="display: none;">
+          <div class="admin-stations-header">
+            <h4 style="margin:0; font-size:0.95rem; color:var(--text-main);">Charging Station Records</h4>
+            <button type="button" id="btn-toggle-add-station" class="btn btn-sm btn-primary">+ Add New Station</button>
+          </div>
+
+          <!-- Add / Edit Station Form (collapsible) -->
+          <form id="admin-station-form" class="admin-station-form" style="display: none;">
+            <input type="hidden" id="admin-station-id" value="">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="admin-station-name">Station Name *</label>
+                <input type="text" id="admin-station-name" required placeholder="e.g. Metro Charge Point">
+              </div>
+              <div class="form-group">
+                <label for="admin-station-location">Location / Area *</label>
+                <input type="text" id="admin-station-location" required placeholder="e.g. Madhapur, Hyderabad">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="admin-station-charger">Charger Type</label>
+                <select id="admin-station-charger">
+                  <option value="Fast DC">Fast DC</option>
+                  <option value="AC Type 2">AC Type 2</option>
+                  <option value="DC CCS">DC CCS</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="admin-station-capacity">Power (kW)</label>
+                <input type="number" id="admin-station-capacity" step="0.1" value="60.0" required>
+              </div>
+              <div class="form-group">
+                <label for="admin-station-distance">Distance (km)</label>
+                <input type="number" id="admin-station-distance" step="0.1" value="2.5" required>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="admin-station-total-ports">Total Ports</label>
+                <input type="number" id="admin-station-total-ports" min="1" value="4" required>
+              </div>
+              <div class="form-group">
+                <label for="admin-station-avail-ports">Available Ports <small>(Demo)</small></label>
+                <input type="number" id="admin-station-avail-ports" min="0" value="2" required>
+              </div>
+              <div class="form-group">
+                <label for="admin-station-wait">Est. Wait (mins) <small>(Demo)</small></label>
+                <input type="number" id="admin-station-wait" min="0" value="5" required>
+              </div>
+              <div class="form-group">
+                <label for="admin-station-demand">Demand Level</label>
+                <select id="admin-station-demand">
+                  <option value="Low">Low</option>
+                  <option value="Medium" selected>Medium</option>
+                  <option value="High">High</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="admin-station-lat">Latitude</label>
+                <input type="number" id="admin-station-lat" step="0.000001" placeholder="17.448300">
+              </div>
+              <div class="form-group">
+                <label for="admin-station-lng">Longitude</label>
+                <input type="number" id="admin-station-lng" step="0.000001" placeholder="78.391500">
+              </div>
+            </div>
+            <div class="admin-form-actions">
+              <button type="submit" id="btn-save-station" class="btn btn-sm btn-primary">Save Station</button>
+              <button type="button" id="btn-cancel-station" class="btn btn-sm btn-secondary">Cancel</button>
+            </div>
+          </form>
+
+          <!-- Stations List Table -->
+          <div class="table-responsive admin-table-container">
+            <table class="stations-table admin-stations-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Location</th>
+                  <th>Type</th>
+                  <th>Ports (Avail/Tot)</th>
+                  <th>Wait</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admin-stations-tbody">
+                <tr><td colspan="7" class="text-center">Loading stations...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Section 3: All Bookings (Admin) -->
+        <div id="admin-section-bookings" style="display: none;">
+          <h4 style="margin:0 0 0.5rem 0; font-size:0.95rem; color:var(--text-main);">All User Reserved Bookings</h4>
+          <div class="table-responsive admin-table-container">
+            <table class="stations-table admin-stations-table">
+              <thead>
+                <tr>
+                  <th>Ref</th>
+                  <th>User / Email</th>
+                  <th>Station</th>
+                  <th>Port</th>
+                  <th>Date & Time</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="admin-bookings-tbody">
+                <tr><td colspan="6" class="text-center">Loading bookings...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Section 4: All Queues (Admin) -->
+        <div id="admin-section-queues" style="display: none;">
+          <h4 style="margin:0 0 0.5rem 0; font-size:0.95rem; color:var(--text-main);">Live Walk-in Queues</h4>
+          <div class="table-responsive admin-table-container">
+            <table class="stations-table admin-stations-table">
+              <thead>
+                <tr>
+                  <th>Ticket</th>
+                  <th>Driver / User</th>
+                  <th>Station</th>
+                  <th>Vehicle</th>
+                  <th>Joined</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="admin-queues-tbody">
+                <tr><td colspan="6" class="text-center">Loading queues...</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -329,5 +932,5 @@
 
   <script src="script.js"></script>
 </body>
-</html>
 
+</html>

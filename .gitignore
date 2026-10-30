@@ -29,6 +29,9 @@ htmlcov/
 # Logs & Runtime Output
 *.log
 
+# Local Recovery Checkpoints
+checkpoint_backup_*/
+
 # IDE & Editor Configurations
 .vscode/
 .idea/

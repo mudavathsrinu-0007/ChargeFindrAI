@@ -10,14 +10,37 @@ def calculate_station_score(station, preferred_charger="Any", preferred_area="An
     score = 0.0
     reasons = []
 
-    available_ports = station.get("available_ports", 0)
-    total_ports = max(station.get("total_ports", 1), 1)
-    wait_minutes = station.get("estimated_wait_minutes", 0)
-    distance_km = float(station.get("distance_km", 99.0))
-    capacity_kw = float(station.get("capacity_kw", 0.0))
-    charger_type = station.get("charger_type", "")
-    demand_level = station.get("demand_level", "Medium")
-    location = station.get("location", "")
+    raw_avail = station.get("available_ports")
+    raw_total = station.get("total_ports")
+    raw_wait = station.get("estimated_wait_minutes")
+    raw_dist = station.get("distance_km")
+    raw_cap = station.get("capacity_kw")
+    raw_demand = station.get("demand_level")
+    raw_location = station.get("location")
+    raw_charger = station.get("charger_type")
+
+    # Safe numeric bounding: total_ports >= 1, 0 <= available_ports <= total_ports
+    total_ports = max(1, int(raw_total) if raw_total is not None and int(raw_total) > 0 else 1)
+    available_ports = max(0, int(raw_avail) if raw_avail is not None else 0)
+    available_ports = min(available_ports, total_ports)
+
+    # Distinguish known wait time from missing/unreported wait time
+    has_known_wait = raw_wait is not None and raw_wait != ""
+    wait_minutes = max(0, int(raw_wait)) if has_known_wait else None
+
+    # Safe non-negative distance
+    has_known_dist = raw_dist is not None and raw_dist != ""
+    distance_km = max(0.0, float(raw_dist)) if has_known_dist else 99.0
+
+    # Safe non-negative capacity
+    capacity_kw = max(0.0, float(raw_cap)) if raw_cap is not None and raw_cap != "" else 0.0
+
+    charger_type = str(raw_charger or "").strip()
+    demand_level = str(raw_demand or "Medium").strip()
+    location = str(raw_location or "").strip()
+    preferred_charger = str(preferred_charger or "Any").strip()
+    preferred_area = str(preferred_area or "Any").strip()
+    priority = str(priority or "balanced").strip().lower()
 
     # 1. Availability Evaluation (Weight: up to 35 points)
     if available_ports > 0:
@@ -26,23 +49,36 @@ def calculate_station_score(station, preferred_charger="Any", preferred_area="An
         score += avail_points
         reasons.append(f"{available_ports} of {total_ports} ports currently available")
     else:
-        score += 0.0
-        reasons.append("Currently congested: 0 ports available")
+        # Congestion penalty: ensures a zero-port station does not outrank comparable open stations merely due to distance
+        score -= 20.0
+        reasons.append("Currently congested: 0 ports available (-20 congestion penalty)")
 
     # 2. Wait Time Evaluation (Weight: up to 25 points)
-    # Shorter wait time earns more points
-    wait_penalty = min(wait_minutes * 1.0, 25.0)
-    wait_points = max(0.0, 25.0 - wait_penalty)
-    score += wait_points
-    if wait_minutes <= 10:
-        reasons.append(f"Low wait time estimated at {wait_minutes} mins")
+    if has_known_wait:
+        wait_penalty = min(wait_minutes * 1.0, 25.0)
+        wait_points = max(0.0, 25.0 - wait_penalty)
+        score += wait_points
+        if wait_minutes <= 10:
+            reasons.append(f"Low wait time estimated at {wait_minutes} mins")
+        else:
+            reasons.append(f"Expected wait time of {wait_minutes} mins")
     else:
-        reasons.append(f"Expected wait time of {wait_minutes} mins")
+        # Do not claim unknown wait time is zero; award neutral baseline
+        score += 10.0
+        reasons.append("Wait time unknown: estimated queue time not reported")
 
-    # 3. Distance & Area Proximity (Weight: up to 20 points)
+    # 3. Distance & Area Proximity (Weight: up to 20 points + 10 target area bonus)
     dist_penalty = min(distance_km * 2.5, 20.0)
     dist_points = max(0.0, 20.0 - dist_penalty)
     score += dist_points
+
+    if has_known_dist:
+        if distance_km <= 3.0:
+            reasons.append(f"Close proximity ({distance_km:.1f} km away)")
+        elif distance_km > 10.0:
+            reasons.append(f"Farther distance ({distance_km:.1f} km away)")
+    else:
+        reasons.append("Distance unknown (standard default applied)")
 
     if preferred_area and preferred_area.lower() != "any":
         if preferred_area.lower() in location.lower():
@@ -64,15 +100,18 @@ def calculate_station_score(station, preferred_charger="Any", preferred_area="An
     # 5. Demand Level Adjustment
     if demand_level.lower() == "low":
         score += 5.0
-        reasons.append("Low demand station (smooth turnaround)")
+        reasons.append("Low demand station (smooth turnaround, +5 bonus)")
     elif demand_level.lower() == "high":
         score -= 5.0
+        reasons.append("High demand station (possible queue buildup, -5 penalty)")
 
-    # User priority weighting adjustment
+    # 6. User priority weighting adjustment with full transparent explanations
     if priority == "fastest_charger" and "fast" in charger_type.lower():
         score += 10.0
-    elif priority == "shortest_wait" and wait_minutes <= 10:
+        reasons.append("Priority bonus: fast charging power matched (+10 bonus)")
+    elif priority == "shortest_wait" and (wait_minutes is not None and wait_minutes <= 10):
         score += 10.0
+        reasons.append(f"Priority bonus: low queue wait ({wait_minutes} mins, +10 bonus)")
 
     final_score = round(max(0.0, min(100.0, score)), 1)
     return final_score, reasons
@@ -86,35 +125,49 @@ def get_station_recommendations(criteria=None):
     if criteria is None:
         criteria = {}
 
-    preferred_area = criteria.get("location", "Any")
-    preferred_charger = criteria.get("charger_type", "Any")
-    priority = criteria.get("priority", "balanced")
+    preferred_area = str(criteria.get("location") or "Any").strip()
+    preferred_charger = str(criteria.get("charger_type") or "Any").strip()
+    priority = str(criteria.get("priority") or "balanced").strip().lower()
 
     conn = get_db_connection()
     if not conn:
         raise Exception("Database connection failed while fetching stations for recommendation.")
 
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM charging_stations;")
-    rows = cursor.fetchall()
-    cursor.close()
-    conn.close()
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM charging_stations ORDER BY station_id ASC;")
+        rows = cursor.fetchall()
+        cursor.close()
+    finally:
+        conn.close()
 
     ranked_stations = []
     for row in rows:
+        raw_avail = row.get("available_ports")
+        raw_total = row.get("total_ports")
+        raw_wait = row.get("estimated_wait_minutes")
+        raw_dist = row.get("distance_km")
+        raw_cap = row.get("capacity_kw")
+        raw_lat = row.get("latitude")
+        raw_lng = row.get("longitude")
+
+        total_ports = max(1, int(raw_total) if raw_total is not None and int(raw_total) > 0 else 1)
+        avail_ports = max(0, int(raw_avail)) if raw_avail is not None else 0
+        avail_ports = min(avail_ports, total_ports)
+
         station = {
-            "station_id": row["station_id"],
-            "station_name": row["station_name"],
-            "location": row["location"],
-            "distance_km": float(row["distance_km"]) if isinstance(row["distance_km"], Decimal) else float(row["distance_km"] or 0),
-            "charger_type": row["charger_type"],
-            "capacity_kw": float(row["capacity_kw"]) if isinstance(row["capacity_kw"], Decimal) else float(row["capacity_kw"] or 0),
-            "available_ports": int(row["available_ports"]),
-            "total_ports": int(row["total_ports"]),
-            "estimated_wait_minutes": int(row["estimated_wait_minutes"]),
-            "demand_level": row["demand_level"],
-            "latitude": float(row["latitude"]) if isinstance(row.get("latitude"), Decimal) else row.get("latitude"),
-            "longitude": float(row["longitude"]) if isinstance(row.get("longitude"), Decimal) else row.get("longitude")
+            "station_id": row.get("station_id"),
+            "station_name": str(row.get("station_name") or "Unknown Station"),
+            "location": str(row.get("location") or "Unspecified Location"),
+            "distance_km": float(raw_dist) if isinstance(raw_dist, Decimal) else float(raw_dist if raw_dist is not None else 99.0),
+            "charger_type": str(row.get("charger_type") or "Standard AC"),
+            "capacity_kw": float(raw_cap) if isinstance(raw_cap, Decimal) else float(raw_cap if raw_cap is not None else 0.0),
+            "available_ports": avail_ports,
+            "total_ports": total_ports,
+            "estimated_wait_minutes": int(raw_wait) if raw_wait is not None else None,
+            "demand_level": str(row.get("demand_level") or "Medium"),
+            "latitude": float(raw_lat) if isinstance(raw_lat, Decimal) else raw_lat,
+            "longitude": float(raw_lng) if isinstance(raw_lng, Decimal) else raw_lng
         }
 
         score, reasons = calculate_station_score(
@@ -127,10 +180,20 @@ def get_station_recommendations(criteria=None):
         station["recommendation_score"] = score
         station["reasons"] = reasons
         station["is_available"] = station["available_ports"] > 0
+        # Present 0 if wait time was null for backwards-compatible JSON schema
+        if station["estimated_wait_minutes"] is None:
+            station["estimated_wait_minutes"] = 0
+
         ranked_stations.append(station)
 
-    # Rank highest score first. If tied, sort by wait minutes ascending
-    ranked_stations.sort(key=lambda s: (-s["recommendation_score"], s["estimated_wait_minutes"]))
+    # Rank highest score first.
+    # Deterministic tie-breakers: score desc, wait mins asc, distance asc, station_id asc
+    ranked_stations.sort(key=lambda s: (
+        -s["recommendation_score"],
+        s["estimated_wait_minutes"] if s.get("estimated_wait_minutes") is not None else 999,
+        s["distance_km"] if s.get("distance_km") is not None else 999.0,
+        s["station_id"] if s.get("station_id") is not None else 0
+    ))
 
     for index, s in enumerate(ranked_stations, start=1):
         s["rank"] = index

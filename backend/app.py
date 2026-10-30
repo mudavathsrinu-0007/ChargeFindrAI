@@ -8,11 +8,13 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
-from backend.database.db_config import _load_env_file, ensure_users_table
+from backend.database.db_config import _load_env_file, ensure_users_table, ensure_booking_and_queue_tables
 from backend.routes.station_routes import station_bp
 from backend.routes.recommendation_routes import recommendation_bp
 from backend.routes.demand_routes import demand_bp
 from backend.routes.auth_routes import auth_bp
+from backend.routes.booking_routes import booking_bp
+from backend.routes.queue_routes import queue_bp
 
 # Ensure .env is loaded
 _load_env_file()
@@ -73,14 +75,17 @@ def add_cors_headers(response):
         response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
     return response
 
-# Ensure users table is initialized
+# Ensure users and booking/queue tables are initialized
 ensure_users_table()
+ensure_booking_and_queue_tables()
 
 # Register API blueprints
 app.register_blueprint(station_bp)
 app.register_blueprint(recommendation_bp)
 app.register_blueprint(demand_bp)
 app.register_blueprint(auth_bp)
+app.register_blueprint(booking_bp)
+app.register_blueprint(queue_bp)
 
 # Root route: serve frontend index.html if it exists, otherwise return API info
 @app.route("/", methods=["GET"])
@@ -103,7 +108,18 @@ def index():
             "auth_login": "/api/auth/login",
             "auth_logout": "/api/auth/logout",
             "auth_me": "/api/auth/me",
-            "admin_overview": "/api/admin/overview"
+            "admin_overview": "/api/admin/overview",
+            "admin_users": "/api/admin/users",
+            "admin_stations": "/api/admin/stations",
+            "available_slots": "/api/bookings/available-slots",
+            "create_booking": "/api/bookings",
+            "my_bookings": "/api/bookings/my",
+            "cancel_booking": "/api/bookings/<id>/cancel",
+            "booking_alternatives": "/api/bookings/<id>/alternatives",
+            "queue_status": "/api/queue/status/<station_id>",
+            "join_queue": "/api/queue/join",
+            "my_queue": "/api/queue/my",
+            "cancel_queue": "/api/queue/<id>/cancel"
         }
     })
 

@@ -1,0 +1,62 @@
+[
+  {
+    "station_id": 1,
+    "station_name": "GreenCharge Hub",
+    "location": "Madhapur, Hyderabad",
+    "distance_km": "1.20",
+    "charger_type": "Fast DC",
+    "capacity_kw": "60.00",
+    "available_ports": 3,
+    "total_ports": 4,
+    "estimated_wait_minutes": 5,
+    "demand_level": "Low"
+  },
+  {
+    "station_id": 2,
+    "station_name": "EV Power Point",
+    "location": "Hitech City, Hyderabad",
+    "distance_km": "2.50",
+    "charger_type": "Fast DC",
+    "capacity_kw": "120.00",
+    "available_ports": 1,
+    "total_ports": 4,
+    "estimated_wait_minutes": 15,
+    "demand_level": "High"
+  },
+  {
+    "station_id": 3,
+    "station_name": "EcoCharge Station",
+    "location": "Kondapur, Hyderabad",
+    "distance_km": "3.10",
+    "charger_type": "AC Type 2",
+    "capacity_kw": "22.00",
+    "available_ports": 2,
+    "total_ports": 3,
+    "estimated_wait_minutes": 8,
+    "demand_level": "Medium"
+  },
+  {
+    "station_id": 4,
+    "station_name": "VoltWay Charging",
+    "location": "Gachibowli, Hyderabad",
+    "distance_km": "4.20",
+    "charger_type": "Fast DC",
+    "capacity_kw": "90.00",
+    "available_ports": 0,
+    "total_ports": 4,
+    "estimated_wait_minutes": 25,
+    "demand_level": "High"
+  },
+  {
+    "station_id": 5,
+    "station_name": "SmartPlug EV Hub",
+    "location": "Kukatpally, Hyderabad",
+    "distance_km": "5.00",
+    "charger_type": "AC Type 2",
+    "capacity_kw": "22.00",
+    "available_ports": 2,
+    "total_ports": 4,
+    "estimated_wait_minutes": 10,
+    "demand_level": "Medium"
+  }
+]

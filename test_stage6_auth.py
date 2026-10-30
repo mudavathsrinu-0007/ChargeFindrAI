@@ -290,28 +290,41 @@ class TestStage6Auth(unittest.TestCase):
     # 10. REGRESSION VERIFICATION OF ALL EXISTING STAGE 1–5 ENDPOINTS
     # =========================================================================
     def test_10_regression_existing_endpoints(self):
-        """Confirm that all Stage 1–5 endpoints remain completely operational without regression."""
-        # 1. Health
+        """Confirm that all Stage 1–5 endpoints remain completely operational without regression for authenticated users."""
+        # 1. Health is public
         res_health = self.client.get("/api/health")
         self.assertEqual(res_health.status_code, 200)
         self.assertEqual(res_health.get_json()["database"], "connected")
 
-        # 2. Stations List
+        # 2. Protected endpoints return 401 when unauthenticated
+        unauth_client = app.test_client()
+        res_unauth = unauth_client.get("/api/stations")
+        self.assertEqual(res_unauth.status_code, 401)
+
+        # 3. Authenticate client
+        csrf = self.get_fresh_csrf(self.client)
+        login_res = self.client.post("/api/auth/login", json={
+            "email": "test.duplicate@chargefindr.local",
+            "password": "SecurePassword123!"
+        }, headers={"X-CSRF-Token": csrf})
+        self.assertEqual(login_res.status_code, 200)
+
+        # 4. Stations List
         res_stations = self.client.get("/api/stations")
         self.assertEqual(res_stations.status_code, 200)
         self.assertEqual(res_stations.get_json()["count"], 5)
 
-        # 3. Dynamic Locations
+        # 5. Dynamic Locations
         res_locations = self.client.get("/api/stations/locations")
         self.assertEqual(res_locations.status_code, 200)
         self.assertGreater(res_locations.get_json()["count"], 0)
 
-        # 4. Smart Alerts
+        # 6. Smart Alerts
         res_alerts = self.client.get("/api/stations/alerts")
         self.assertEqual(res_alerts.status_code, 200)
         self.assertTrue(res_alerts.get_json()["has_alert"])
 
-        # 5. Public Recommendation (Unauthenticated POST works without CSRF restriction)
+        # 7. Recommendations for authenticated user
         res_rec = self.client.post("/api/recommend", json={
             "location": "Any",
             "charger_type": "Any",
@@ -320,18 +333,18 @@ class TestStage6Auth(unittest.TestCase):
         self.assertEqual(res_rec.status_code, 200)
         self.assertGreater(len(res_rec.get_json()["data"]["recommendations"]), 0)
 
-        # 6. ML Demand Inference
+        # 8. ML Demand Inference
         res_demand = self.client.get("/api/demand?hour=18&day_of_week=2")
         self.assertEqual(res_demand.status_code, 200)
         self.assertIn("predicted_demand_kwh", res_demand.get_json()["data"])
         self.assertEqual(len(res_demand.get_json()["data"]["hourly_curve"]), 24)
 
-        # 7. ML Model Metadata
+        # 9. ML Model Metadata
         res_meta = self.client.get("/api/demand/metadata")
         self.assertEqual(res_meta.status_code, 200)
         self.assertEqual(res_meta.get_json()["data"]["total_samples"], 72856)
 
-        print("\n[VERIFIED] All Stage 1–5 public endpoints passed regression checks!")
+        print("\n[VERIFIED] All Stage 1–5 protected endpoints passed regression checks!")
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

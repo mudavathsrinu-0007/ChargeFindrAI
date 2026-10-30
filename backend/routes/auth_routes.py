@@ -5,7 +5,11 @@ from backend.services.auth_service import (
     register_user,
     authenticate_user,
     get_user_by_id,
-    get_admin_system_overview
+    get_admin_system_overview,
+    admin_get_all_users,
+    admin_create_station,
+    admin_update_station,
+    admin_delete_station
 )
 
 auth_bp = Blueprint("auth_bp", __name__)
@@ -104,13 +108,15 @@ def register():
     full_name = data.get("full_name")
     email = data.get("email")
     password = data.get("password")
+    confirm_password = data.get("confirm_password")
 
     result, status_code = register_user(
         full_name=full_name,
         email=email,
         password=password,
         role="user",
-        is_controlled_provision=False
+        is_controlled_provision=False,
+        confirm_password=confirm_password
     )
     return jsonify(result), status_code
 
@@ -254,4 +260,46 @@ def admin_overview():
         "message": "Administrative system telemetry retrieved successfully.",
         "data": overview
     }), 200
+
+@auth_bp.route("/api/admin/users", methods=["GET"])
+@admin_required
+def admin_users():
+    """List all registered users (admin-only)."""
+    users = admin_get_all_users()
+    if users is None:
+        return jsonify({
+            "success": False,
+            "error": "Failed to fetch user list from database."
+        }), 500
+    return jsonify({
+        "success": True,
+        "count": len(users),
+        "data": users
+    }), 200
+
+@auth_bp.route("/api/admin/stations", methods=["POST"])
+@admin_required
+@csrf_protect
+def admin_add_station():
+    """Create a new EV charging station record (admin-only)."""
+    data = request.get_json(silent=True) or {}
+    result, status_code = admin_create_station(data)
+    return jsonify(result), status_code
+
+@auth_bp.route("/api/admin/stations/<int:station_id>", methods=["PUT"])
+@admin_required
+@csrf_protect
+def admin_edit_station(station_id):
+    """Update an existing EV charging station record (admin-only)."""
+    data = request.get_json(silent=True) or {}
+    result, status_code = admin_update_station(station_id, data)
+    return jsonify(result), status_code
+
+@auth_bp.route("/api/admin/stations/<int:station_id>", methods=["DELETE"])
+@admin_required
+@csrf_protect
+def admin_remove_station(station_id):
+    """Delete an EV charging station record (admin-only)."""
+    result, status_code = admin_delete_station(station_id)
+    return jsonify(result), status_code
 

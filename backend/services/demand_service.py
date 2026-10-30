@@ -29,13 +29,13 @@ def _load_model_artifacts():
             _metrics = None
 
 def categorize_demand(kwh):
-    """Classify predicted kWh into Low, Medium, or High congestion risk."""
+    """Classify predicted session energy consumption (kWh)."""
     if kwh < 12.0:
-        return "Low", "Optimal charging window. Low grid load and fast station turnaround expected."
+        return "Low", "Low session energy consumption (<12 kWh). Favorable for rapid session turnaround."
     elif kwh <= 20.0:
-        return "Medium", "Moderate charging demand. Regular turnaround expected."
+        return "Medium", "Typical session energy consumption (12-20 kWh). Regular session turnaround expected."
     else:
-        return "High", "Peak charging demand period. Higher queue probability expected."
+        return "High", "High session energy consumption (>20 kWh). Longer vehicle charging session duration expected."
 
 def get_model_metadata():
     """
@@ -52,7 +52,9 @@ def get_model_metadata():
         return {
             "model_type": _metrics.get("model_type", "RandomForestRegressor"),
             "dataset": _metrics.get("dataset", "Figshare EV Charging Transactions (72,856 records)"),
-            "target_variable": _metrics.get("target_variable", "Individual Session Energy Demand (kWh)"),
+            "target_variable": _metrics.get("target_variable", "Demand (kWh)"),
+            "target_description": "Individual Session Energy Consumption (kWh)",
+            "location_benchmark": "Public Area (Default representative site category)",
             "train_samples": train_count,
             "test_samples": test_count,
             "total_samples": total_count,
@@ -67,7 +69,9 @@ def get_model_metadata():
     return {
         "model_type": "Baseline Statistical Average (Fallback)",
         "dataset": "Unavailable",
-        "target_variable": "Individual Session Energy Demand (kWh)",
+        "target_variable": "Demand (kWh)",
+        "target_description": "Individual Session Energy Consumption (kWh)",
+        "location_benchmark": "Public Area (Default representative site category)",
         "train_samples": None,
         "test_samples": None,
         "total_samples": None,
@@ -86,12 +90,20 @@ def predict_demand(hour=None, day_of_week=None, charger_type="Fast DC", location
     now = datetime.now()
     if hour is None:
         hour = now.hour
+    else:
+        hour = max(0, min(23, int(hour)))
+
     if day_of_week is None:
         day_of_week = now.weekday()
+    else:
+        day_of_week = max(0, min(6, int(day_of_week)))
 
     is_weekend = 1 if day_of_week >= 5 else 0
     month = now.month
     charger_code = 1 if "fast" in str(charger_type).lower() else 0
+
+    # Safe location handling: never crash on location=None or non-string
+    loc_clean = str(location or "public area").strip().lower()
 
     if _model is not None and _metrics is not None:
         feature_cols = _metrics.get("feature_columns", [
@@ -99,17 +111,20 @@ def predict_demand(hour=None, day_of_week=None, charger_type="Fast DC", location
             "loc_public_area", "loc_apartment", "loc_resort", "loc_hotel", "loc_company"
         ])
 
+        # Disambiguate "public area" from other public categories like "public parking lot" and "public institution"
+        is_public_area = 1 if ("public area" in loc_clean or loc_clean in ("public", "public_area")) else 0
+
         row_dict = {
             "hour": hour,
             "day_of_week": day_of_week,
             "is_weekend": is_weekend,
             "month": month,
             "charger_type_code": charger_code,
-            "loc_public_area": 1 if "public" in location.lower() else 0,
-            "loc_apartment": 1 if "apartment" in location.lower() else 0,
-            "loc_resort": 1 if "resort" in location.lower() else 0,
-            "loc_hotel": 1 if "hotel" in location.lower() else 0,
-            "loc_company": 1 if "company" in location.lower() else 0,
+            "loc_public_area": is_public_area,
+            "loc_apartment": 1 if "apartment" in loc_clean else 0,
+            "loc_resort": 1 if "resort" in loc_clean else 0,
+            "loc_hotel": 1 if "hotel" in loc_clean else 0,
+            "loc_company": 1 if "company" in loc_clean else 0,
         }
 
         # Fill any missing columns with 0
@@ -144,11 +159,11 @@ def predict_demand(hour=None, day_of_week=None, charger_type="Fast DC", location
                 "is_weekend": is_weekend,
                 "month": month,
                 "charger_type_code": charger_code,
-                "loc_public_area": 1,
-                "loc_apartment": 0,
-                "loc_resort": 0,
-                "loc_hotel": 0,
-                "loc_company": 0,
+                "loc_public_area": row_dict["loc_public_area"],
+                "loc_apartment": row_dict["loc_apartment"],
+                "loc_resort": row_dict["loc_resort"],
+                "loc_hotel": row_dict["loc_hotel"],
+                "loc_company": row_dict["loc_company"],
             }
             temp_df = pd.DataFrame([temp_dict])[feature_cols]
             kwh = round(float(_model.predict(temp_df)[0]), 2)
@@ -175,6 +190,9 @@ def predict_demand(hour=None, day_of_week=None, charger_type="Fast DC", location
         "advisory": advisory,
         "model_used": model_name,
         "is_ml_model": is_ml_model,
+        "forecast_type": "Illustrative Hourly Sensitivity Profile (00:00 - 23:00)",
+        "target_description": "Expected Individual Session Energy Consumption (kWh)",
+        "location_benchmark": "Public Area (Default representative site category)" if "public area" in loc_clean else loc_clean.title(),
         "metrics": meta.get("metrics"),
         "dataset": meta.get("dataset"),
         "metadata": meta,

@@ -6,7 +6,7 @@ from backend.database.db_config import get_db_connection
 
 EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
 
-def validate_registration_input(full_name, email, password):
+def validate_registration_input(full_name, email, password, confirm_password=None):
     """
     Validate and normalize registration inputs.
     Returns: (is_valid: bool, error_message: str or None, normalized_name: str, normalized_email: str)
@@ -32,16 +32,22 @@ def validate_registration_input(full_name, email, password):
     if password.strip() == "":
         return False, "Password cannot consist solely of whitespace characters.", "", ""
 
+    if confirm_password is not None:
+        if not isinstance(confirm_password, str) or password != confirm_password:
+            return False, "Passwords do not match.", "", ""
+
     return True, None, name_clean, email_clean
 
-def register_user(full_name, email, password, role="user", is_controlled_provision=False):
+def register_user(full_name, email, password, role="user", is_controlled_provision=False, confirm_password=None):
     """
     Register a new user in the MySQL database.
     Security guarantee: Public callers cannot set an administrative role.
     Role is strictly hardcoded to 'user' unless is_controlled_provision is explicitly True.
     Returns: (dict_response, http_status_code)
     """
-    is_valid, err_msg, name_clean, email_clean = validate_registration_input(full_name, email, password)
+    is_valid, err_msg, name_clean, email_clean = validate_registration_input(
+        full_name, email, password, confirm_password
+    )
     if not is_valid:
         return {
             "success": False,
@@ -245,4 +251,268 @@ def get_admin_system_overview():
         if conn and conn.is_connected():
             conn.close()
         return None
+
+def admin_get_all_users():
+    """
+    Retrieve all user accounts for authenticated administrators only.
+    Excludes sensitive password hashes.
+    """
+    conn = get_db_connection()
+    if not conn:
+        return None
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            "SELECT user_id, full_name, email, role, created_at, updated_at "
+            "FROM users ORDER BY user_id ASC;"
+        )
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+        users = []
+        for r in rows:
+            users.append({
+                "user_id": r["user_id"],
+                "full_name": r["full_name"],
+                "email": r["email"],
+                "role": r["role"],
+                "created_at": r["created_at"].isoformat() if r.get("created_at") else None,
+                "updated_at": r["updated_at"].isoformat() if r.get("updated_at") else None
+            })
+        return users
+    except Exception:
+        if conn and conn.is_connected():
+            conn.close()
+        return None
+
+def admin_create_station(data):
+    """
+    Create a new EV charging station record in MySQL.
+    Admin-only operation with parameterized queries and strict validation.
+    """
+    if not isinstance(data, dict):
+        return {"success": False, "error": "Invalid payload format. Must be a JSON object."}, 400
+
+    name = data.get("station_name")
+    location = data.get("location")
+    if not name or not isinstance(name, str) or not name.strip():
+        return {"success": False, "error": "Station name is required."}, 400
+    if not location or not isinstance(location, str) or not location.strip():
+        return {"success": False, "error": "Location is required."}, 400
+
+    charger_type = data.get("charger_type", "Fast DC")
+    if charger_type not in ["Fast DC", "AC Type 2", "DC CCS", "CHAdeMO"]:
+        charger_type = str(charger_type).strip() or "Fast DC"
+
+    try:
+        distance_km = float(data.get("distance_km", 2.0))
+        capacity_kw = float(data.get("capacity_kw", 50.0))
+        total_ports = int(data.get("total_ports", 4))
+        available_ports = int(data.get("available_ports", 2))
+        estimated_wait_minutes = int(data.get("estimated_wait_minutes", 5))
+        demand_level = str(data.get("demand_level", "Medium")).strip()
+        if demand_level not in ["Low", "Medium", "High"]:
+            demand_level = "Medium"
+
+        lat = data.get("latitude")
+        lng = data.get("longitude")
+        latitude = float(lat) if lat is not None and str(lat).strip() != "" else None
+        longitude = float(lng) if lng is not None and str(lng).strip() != "" else None
+    except (ValueError, TypeError) as num_err:
+        return {"success": False, "error": f"Invalid numeric input: {str(num_err)}"}, 400
+
+    if total_ports < 1:
+        return {"success": False, "error": "Total ports must be at least 1."}, 400
+    if available_ports < 0 or available_ports > total_ports:
+        return {"success": False, "error": "Available ports must be between 0 and total ports."}, 400
+    if estimated_wait_minutes < 0:
+        return {"success": False, "error": "Estimated wait time cannot be negative."}, 400
+
+    conn = get_db_connection()
+    if not conn:
+        return {"success": False, "error": "Database connection failed."}, 500
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            """
+            INSERT INTO charging_stations (
+                station_name, location, distance_km, charger_type, capacity_kw,
+                available_ports, total_ports, estimated_wait_minutes, demand_level,
+                latitude, longitude
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+            """,
+            (
+                name.strip(), location.strip(), distance_km, charger_type, capacity_kw,
+                available_ports, total_ports, estimated_wait_minutes, demand_level,
+                latitude, longitude
+            )
+        )
+        conn.commit()
+        new_id = cursor.lastrowid
+        cursor.close()
+        conn.close()
+
+        return {
+            "success": True,
+            "message": f"Station '{name.strip()}' created successfully.",
+            "station": {
+                "station_id": new_id,
+                "station_name": name.strip(),
+                "location": location.strip(),
+                "distance_km": distance_km,
+                "charger_type": charger_type,
+                "capacity_kw": capacity_kw,
+                "available_ports": available_ports,
+                "total_ports": total_ports,
+                "estimated_wait_minutes": estimated_wait_minutes,
+                "demand_level": demand_level,
+                "latitude": latitude,
+                "longitude": longitude
+            }
+        }, 201
+    except Exception as e:
+        if conn and conn.is_connected():
+            conn.close()
+        return {"success": False, "error": f"Failed to create station: {str(e)}"}, 500
+
+def admin_update_station(station_id, data):
+    """
+    Update an existing EV charging station record in MySQL.
+    Admin-only operation with parameterized queries and strict validation.
+    """
+    if not isinstance(data, dict):
+        return {"success": False, "error": "Invalid payload format. Must be a JSON object."}, 400
+
+    conn = get_db_connection()
+    if not conn:
+        return {"success": False, "error": "Database connection failed."}, 500
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM charging_stations WHERE station_id = %s;", (station_id,))
+        existing = cursor.fetchone()
+        if not existing:
+            cursor.close()
+            conn.close()
+            return {"success": False, "error": f"Station with ID {station_id} does not exist."}, 404
+
+        name = data.get("station_name", existing["station_name"])
+        location = data.get("location", existing["location"])
+        charger_type = data.get("charger_type", existing["charger_type"])
+        demand_level = data.get("demand_level", existing["demand_level"])
+
+        try:
+            distance_km = float(data.get("distance_km", existing["distance_km"]))
+            capacity_kw = float(data.get("capacity_kw", existing["capacity_kw"]))
+            total_ports = int(data.get("total_ports", existing["total_ports"]))
+            available_ports = int(data.get("available_ports", existing["available_ports"]))
+            estimated_wait_minutes = int(data.get("estimated_wait_minutes", existing["estimated_wait_minutes"]))
+
+            lat = data.get("latitude", existing["latitude"])
+            lng = data.get("longitude", existing["longitude"])
+            latitude = float(lat) if lat is not None and str(lat).strip() != "" else None
+            longitude = float(lng) if lng is not None and str(lng).strip() != "" else None
+        except (ValueError, TypeError) as num_err:
+            cursor.close()
+            conn.close()
+            return {"success": False, "error": f"Invalid numeric input: {str(num_err)}"}, 400
+
+        if total_ports < 1:
+            cursor.close()
+            conn.close()
+            return {"success": False, "error": "Total ports must be at least 1."}, 400
+        if available_ports < 0 or available_ports > total_ports:
+            cursor.close()
+            conn.close()
+            return {"success": False, "error": "Available ports must be between 0 and total ports."}, 400
+        if estimated_wait_minutes < 0:
+            cursor.close()
+            conn.close()
+            return {"success": False, "error": "Estimated wait time cannot be negative."}, 400
+
+        cursor.execute(
+            """
+            UPDATE charging_stations SET
+                station_name = %s,
+                location = %s,
+                distance_km = %s,
+                charger_type = %s,
+                capacity_kw = %s,
+                available_ports = %s,
+                total_ports = %s,
+                estimated_wait_minutes = %s,
+                demand_level = %s,
+                latitude = %s,
+                longitude = %s
+            WHERE station_id = %s;
+            """,
+            (
+                str(name).strip(), str(location).strip(), distance_km, str(charger_type).strip(),
+                capacity_kw, available_ports, total_ports, estimated_wait_minutes,
+                str(demand_level).strip(), latitude, longitude, station_id
+            )
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        return {
+            "success": True,
+            "message": f"Station #{station_id} updated successfully.",
+            "station": {
+                "station_id": station_id,
+                "station_name": str(name).strip(),
+                "location": str(location).strip(),
+                "distance_km": distance_km,
+                "charger_type": str(charger_type).strip(),
+                "capacity_kw": capacity_kw,
+                "available_ports": available_ports,
+                "total_ports": total_ports,
+                "estimated_wait_minutes": estimated_wait_minutes,
+                "demand_level": str(demand_level).strip(),
+                "latitude": latitude,
+                "longitude": longitude
+            }
+        }, 200
+    except Exception as e:
+        if conn and conn.is_connected():
+            conn.close()
+        return {"success": False, "error": f"Failed to update station: {str(e)}"}, 500
+
+def admin_delete_station(station_id):
+    """
+    Delete an EV charging station record from MySQL.
+    Admin-only operation with parameterized queries.
+    """
+    conn = get_db_connection()
+    if not conn:
+        return {"success": False, "error": "Database connection failed."}, 500
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT station_name FROM charging_stations WHERE station_id = %s;", (station_id,))
+        existing = cursor.fetchone()
+        if not existing:
+            cursor.close()
+            conn.close()
+            return {"success": False, "error": f"Station with ID {station_id} does not exist."}, 404
+
+        name = existing["station_name"]
+        cursor.execute("DELETE FROM charging_stations WHERE station_id = %s;", (station_id,))
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        return {
+            "success": True,
+            "message": f"Station #{station_id} ('{name}') was deleted successfully."
+        }, 200
+    except Exception as e:
+        if conn and conn.is_connected():
+            conn.close()
+        return {"success": False, "error": f"Failed to delete station: {str(e)}"}, 500
+
 
